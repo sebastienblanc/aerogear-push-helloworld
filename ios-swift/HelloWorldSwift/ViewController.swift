@@ -19,15 +19,17 @@ import UIKit
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
                             
-    @IBOutlet var tableView : UITableView
+    @IBOutlet var tableView : UITableView!
+    
+    // holds the messages received and displayed on tableview
     var messages: Array<String> = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        
         messages = ["Registering...."]
         
-        // func addObserver(observer: AnyObject!, selector aSelector: Selector, name aName: String!, object anObject: AnyObject!)
+        // register to notification center to received notifications upon events
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "registered", name: "success_registered", object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "errorRegistration", name: "error_register", object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "messageReceived:", name: "message_received", object: nil)
@@ -39,20 +41,23 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func registered() {
-        NSLog("registered");
+        println("registered")
+        
         messages.removeAtIndex(0)
         messages.append("Sucessfully registered")
+        
         // workaround to get messages when app was not running
         let defaults: NSUserDefaults = NSUserDefaults.standardUserDefaults();
-        if(defaults.objectForKey("message_received")) {
+        if(defaults.objectForKey("message_received") != nil) {
             let msg : String! = defaults.objectForKey("message_received") as String
             defaults.removeObjectForKey("message_received")
             defaults.synchronize()
     
-            if(msg) {
+            if(msg != nil) {
                 messages.append(msg)
             }
         }
+        
         tableView.reloadData()
     }
 
@@ -63,12 +68,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func messageReceived(notification: NSNotification) {
-        NSLog("received");
-        // trying to access notification.object["aps"]["alert"] make Xcode6beta goes crazy (lost colouring) and eventually crash
-        let msg = notification.object as NSDictionary
-        let msg2 = msg["aps"] as NSDictionary
-        let msg3 = msg2["alert"] as String
-        messages.append(msg3)
+        println("received")
+
+        let msg = notification.userInfo!["aps"]!["alert"] as String
+        messages.append(msg)
         tableView.reloadData()
     }
     
@@ -78,12 +81,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     func tableView(tableView: UITableView!, cellForRowAtIndexPath indexPath: NSIndexPath!) -> UITableViewCell! {
         var cell : UITableViewCell = tableView.dequeueReusableCellWithIdentifier("Cell") as UITableViewCell
-        if (cell == nil) {
-            cell = UITableViewCell(style:.Default, reuseIdentifier: "Cell")
-        }
+
         cell.textLabel.text = messages[indexPath.row]
+        
         return cell
     }
-
 }
 
